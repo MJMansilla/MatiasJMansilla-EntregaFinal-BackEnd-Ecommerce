@@ -2,58 +2,71 @@ const fs = require("fs");
 const path = require("path");
 
 class ProductManager {
-    static rutaDatos = path.join(__dirname, "../data/products.json");
+  static dataPath = path.join(__dirname, "../data/products.json");
 
-    static async getProducts() {
-        if (fs.existsSync(this.rutaDatos)) {
-            return JSON.parse(await fs.promises.readFile(this.rutaDatos, "utf-8"));
-        } else {
-            return [];
-        }
+  static async _ensureFile() {
+    if (!fs.existsSync(this.dataPath)) {
+      await fs.promises.mkdir(path.dirname(this.dataPath), { recursive: true });
+      await fs.promises.writeFile(this.dataPath, "[]", "utf-8");
     }
+  }
 
-    static async getProductById(id) {
-        const productos = await this.getProducts();
-        return productos.find(p => p.id == id) || null;
+  static async getProducts() {
+    await this._ensureFile();
+    const raw = await fs.promises.readFile(this.dataPath, "utf-8");
+    try { return JSON.parse(raw); } catch { return []; }
+  }
+
+  static async getProductById(id) {
+    const productos = await this.getProducts();
+    return productos.find(p => String(p.id) === String(id)) || null;
+  }
+
+  static async addProduct(data) {
+    const required = ["title","description","code","price","stock","category"];
+    for (const k of required) {
+      if (data[k] === undefined || data[k] === null || data[k] === "") {
+        throw new Error(`Campo requerido faltante: ${k}`);
+      }
     }
+    const productos = await this.getProducts();
+    const maxId = productos.reduce((m,p)=> Math.max(m, Number(p.id)||0), 0);
+    const nuevo = {
+      id: maxId + 1,
+      status: data.status !== undefined ? !!data.status : true,
+      thumbnails: Array.isArray(data.thumbnails) ? data.thumbnails : [],
+      ...data,
+      price: Number(data.price),
+      stock: Number(data.stock),
+    };
+    productos.push(nuevo);
+    await fs.promises.writeFile(this.dataPath, JSON.stringify(productos, null, 2));
+    return nuevo;
+  }
 
-    static async addProduct(data) {
-        const productos = await this.getProducts();
-        const id = productos.length > 0 ? Math.max(...productos.map(p => p.id)) + 1 : 1;
+  static async updateProduct(id, data) {
+    const productos = await this.getProducts();
+    const idx = productos.findIndex(p => String(p.id) == String(id));
+    if (idx === -1) return null;
+    const current = productos[idx];
+    const merged = {
+      ...current,
+      ...data,
+      id: current.id,
+      price: data.price !== undefined ? Number(data.price) : current.price,
+      stock: data.stock !== undefined ? Number(data.stock) : current.stock,
+    };
+    productos[idx] = merged;
+    await fs.promises.writeFile(this.dataPath, JSON.stringify(productos, null, 2));
+    return merged;
+  }
 
-        const nuevoProducto = {
-            id,
-            title: data.title,
-            description: data.description,
-            code: data.code,
-            price: data.price,
-            status: data.status ?? true,
-            stock: data.stock,
-            category: data.category,
-            thumbnails: data.thumbnails || []
-        };
-
-        productos.push(nuevoProducto);
-        await fs.promises.writeFile(this.rutaDatos, JSON.stringify(productos, null, 2));
-        return nuevoProducto;
-    }
-
-    static async updateProduct(id, data) {
-        const productos = await this.getProducts();
-        const index = productos.findIndex(p => p.id == id);
-        if (index === -1) return null;
-
-        productos[index] = { ...productos[index], ...data, id: productos[index].id };
-        await fs.promises.writeFile(this.rutaDatos, JSON.stringify(productos, null, 2));
-        return productos[index];
-    }
-
-    static async deleteProduct(id) {
-        const productos = await this.getProducts();
-        const nuevos = productos.filter(p => p.id != id);
-        await fs.promises.writeFile(this.rutaDatos, JSON.stringify(nuevos, null, 2));
-        return true;
-    }
+  static async deleteProduct(id) {
+    const productos = await this.getProducts();
+    const nuevos = productos.filter(p => String(p.id) !== String(id));
+    await fs.promises.writeFile(this.dataPath, JSON.stringify(nuevos, null, 2));
+    return true;
+  }
 }
 
-module.exports = { ProductManager };
+module.exports = ProductManager;
