@@ -1,0 +1,20 @@
+<h1>Productos</h1>
+
+<ul>
+  {{#each products}}
+    <li>
+      <a href="/products/{{this._id}}">{{this.title}}</a>
+      - ${{this.price}} - {{this.category}} - {{#if this.status}}Disponible{{else}}No disponible{{/if}}
+      <!-- Opción B: botón directo -->
+      <button onclick="addToCart('{{this._id}}')">Agregar al carrito</button>
+    </li>
+  {{/each}}
+</ul>
+
+<div>
+  {{#if hasPrevPage}} <a href="{{prevLink}}">Prev</a> {{/if}}
+  <span>Página {{page}} de {{totalPages}}</span>
+  {{#if hasNextPage}} <a href="{{nextLink}}">Next</a> {{/if}}
+</div>
+
+<script src="/js/cart.js"></script>

@@ -1,0 +1,12 @@
+<h1>{{product.title}}</h1>
+<p>{{product.description}}</p>
+<p>Categoría: {{product.category}}</p>
+<p>Precio: ${{product.price}}</p>
+<p>Stock: {{product.stock}}</p>
+<p>Estado: {{#if product.status}}Disponible{{else}}No disponible{{/if}}</p>
+
+<button onclick="addToCart('{{product._id}}')">Agregar al carrito</button>
+
+<p><a href="/products">Volver</a></p>
+
+<script src="/js/cart.js"></script>
