@@ -1,0 +1,55 @@
+<section>
+  <h2>Listado de Productos</h2>
+
+  <form class="filters" method="get" action="/products">
+    <label>Buscar:</label>
+    <input
+      type="text"
+      name="query"
+      placeholder="Buscar por título o categoría"
+      value="{{query}}"
+    />
+    <label>Orden:</label>
+    <select name="sort">
+      <option value="">Sin orden</option>
+      <option value="asc">Precio ↑</option>
+      <option value="desc">Precio ↓</option>
+    </select>
+    <label>Por página:</label>
+    <input type="number" min="1" name="limit" value="10" />
+    <button type="submit">Aplicar</button>
+  </form>
+
+  <div class="grid">
+    {{#each payload}}
+      <article class="card">
+        <h3>{{this.title}}</h3>
+        <p class="muted">{{this.category}}
+          -
+          {{#if this.status}}Disponible{{else}}No disponible{{/if}}</p>
+        <p>${{this.price}} | Stock: {{this.stock}}</p>
+        <p>{{this.description}}</p>
+        <div class="row">
+          <a class="btn" href="/products/{{this._id}}">Ver detalle</a>
+          <form class="inline-form" onsubmit="return addToCart(event, this);">
+            <input type="hidden" name="pid" value="{{this._id}}" />
+            <input type="number" name="quantity" value="1" min="1" />
+            <button type="submit">Agregar</button>
+          </form>
+        </div>
+      </article>
+    {{/each}}
+  </div>
+
+  <nav class="pagination">
+    {{#if hasPrevPage}}
+      <a class="btn" href="{{prevLink}}">⟵ Anterior</a>
+    {{/if}}
+    <span>Página {{page}} de {{totalPages}}</span>
+    {{#if hasNextPage}}
+      <a class="btn" href="{{nextLink}}">Siguiente ⟶</a>
+    {{/if}}
+  </nav>
+</section>
+
+<script src="/public/js/products.js"></script>

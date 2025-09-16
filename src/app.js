@@ -1,86 +1,118 @@
-const express = require("express");
-const path = require("path");
-const { Server } = require("socket.io");
-const exphbs = require("express-handlebars");
-const mongoose = require("mongoose");
+import express from "express";
+import mongoose from "mongoose";
+import { engine } from "express-handlebars";
+import path from "path";
+import { fileURLToPath } from "url";
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
 
-const viewsRouter = require("./routes/views.router");
-const productsRouter = require("./routes/products.router");
-let cartsRouter;
-try {
-  cartsRouter = require("./routes/carts.router");
-} catch {
-  cartsRouter = null;
-}
+// Routers
+import productsRouter from "./routes/products.router.js";
+import cartsRouter from "./routes/carts.router.js";
+import viewsRouter from "./routes/views.router.js";
 
-const ProductManager = require("./dao/ProductManager");
+// Managers (para sockets)
+import ProductManager from "./managers/ProductManager.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const server = http.createServer(app);
+const io = new SocketIOServer(server);
 
-const MONGO_URI =
-  "mongodb+srv://coder:codercoder@cluster0.olj5ktk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-const conectarDB = async () => {
-  try {
-    await mongoose.connect(MONGO_URI);
-    console.log("[Mongo] Conectado a Atlas");
-  } catch (err) {
-    console.error("[Mongo] Error de conexión:", err.message);
-    process.exit(1);
-  }
-};
-
-conectarDB();
-
-app.set("case sensitive routing", false);
+// MIDDLEWARES
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use("/public", express.static(path.join(__dirname, "public")));
 
-app.engine("handlebars", exphbs.engine());
+//HANDLEBARS
+app.engine(
+  "handlebars",
+  engine({
+    extname: ".handlebars",
+    defaultLayout: "main",
+    layoutsDir: path.join(__dirname, "views", "layouts"),
+  })
+);
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "views"));
 
-app.use("/", viewsRouter);
-app.use("/api/products", productsRouter);
-if (cartsRouter) app.use("/api/carts", cartsRouter);
-
-const httpServer = app.listen(PORT, () =>
-  console.log(`Server http://localhost:${PORT}`)
-);
-const io = new Server(httpServer);
-
-io.on("connection", async (socket) => {
-  console.log("[io] Cliente conectado:", socket.id);
-
+//CONEXIÓN A MONGO
+async function connectMongo() {
   try {
-    socket.emit(
-      "productos",
-      await ProductManager.getProducts({}, { limit: 50 })
+    const MONGO_URL =
+      "mongodb+srv://coder:codercoder@cluster0.zwizklb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+    await mongoose.connect(MONGO_URL);
+    console.log("✅ Conectado a MongoDB");
+  } catch (error) {
+    console.error("❌ Error conectando a MongoDB:", error.message);
+    process.exit(1);
+  }
+}
+await connectMongo();
+
+//SOCKET.IO
+io.on("connection", async (socket) => {
+  console.log("🔌 Cliente conectado:", socket.id);
+  const pm = new ProductManager();
+
+  // Enviar lista inicial
+  try {
+    const products = await pm.getAllLean();
+    socket.emit("products", products);
+  } catch (err) {
+    console.error(
+      "Error al obtener productos iniciales para sockets:",
+      err.message
     );
-  } catch (e) {
-    socket.emit("errorProducto", "No se pudo cargar el listado inicial");
   }
 
-  socket.on("nuevoProducto", async (prod) => {
+  // Crear producto desde el cliente
+  socket.on("addProduct", async (data) => {
     try {
-      await ProductManager.create(prod);
-      io.emit("productos", await ProductManager.getProducts({}, { limit: 50 }));
-      socket.emit("productoCreado", "Producto creado ok");
-    } catch (e) {
-      socket.emit("errorProducto", e?.message || "Error al crear");
+      const created = await pm.create(data);
+      const products = await pm.getAllLean();
+      io.emit("products", products); // Actualizar a todos
+      socket.emit("productAdded", { ok: true, product: created });
+    } catch (err) {
+      socket.emit("productAdded", { ok: false, error: err.message });
     }
   });
 
-  socket.on("eliminarProducto", async (id) => {
+  // Eliminar producto por id
+  socket.on("deleteProduct", async (id) => {
     try {
-      await ProductManager.delete(id);
-      io.emit("productos", await ProductManager.getProducts({}, { limit: 50 }));
-    } catch (e) {
-      socket.emit("errorProducto", e?.message || "Error al eliminar");
+      await pm.delete(id);
+      const products = await pm.getAllLean();
+      io.emit("products", products);
+      socket.emit("productDeleted", { ok: true, id });
+    } catch (err) {
+      socket.emit("productDeleted", { ok: false, error: err.message });
     }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("👋 Cliente desconectado:", socket.id);
   });
 });
 
-module.exports = app;
+//ROUTERS
+app.use("/api/products", productsRouter);
+app.use("/api/carts", cartsRouter);
+app.use("/", viewsRouter);
+
+//MANEJO DE ERRORES
+app.use((err, req, res, next) => {
+  console.error("🛑 Error no controlado:", err);
+  const status = err.status || 500;
+  res.status(status).json({
+    status: "error",
+    error: err.message || "Error interno del servidor",
+  });
+});
+
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+  console.log(` Server escuchando en http://localhost:${PORT}`);
+});

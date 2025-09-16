@@ -1,75 +1,84 @@
-const express = require("express");
-const router = express.Router();
-const CartManager = require("../dao/CartManager");
-router.post("/", async (req, res) => {
+import { Router } from "express";
+import CartManager from "../managers/CartManager.js";
+
+const router = Router();
+const cm = new CartManager();
+
+// Crear carrito
+router.post("/", async (req, res, next) => {
   try {
-    const cart = await CartManager.create();
+    const cart = await cm.createCart();
     res.status(201).json({ status: "success", payload: cart });
-  } catch {
-    res.status(500).json({ status: "error", error: "Internal error" });
+  } catch (err) {
+    next(err);
   }
 });
-router.get("/:cid", async (req, res) => {
+
+// Obtener carrito con populate
+router.get("/:cid", async (req, res, next) => {
   try {
-    const cart = await CartManager.getById(req.params.cid);
-    if (!cart)
-      return res.status(404).json({ status: "error", error: "Cart not found" });
+    const cart = await cm.getByIdPopulated(req.params.cid);
     res.json({ status: "success", payload: cart });
-  } catch {
-    res.status(400).json({ status: "error", error: "Invalid id" });
+  } catch (err) {
+    next(err);
   }
 });
-router.put("/:cid", async (req, res) => {
+
+// Agregar producto al carrito (cantidad opcional en body)
+router.post("/:cid/product/:pid", async (req, res, next) => {
   try {
-    const { products } = req.body;
-    if (!Array.isArray(products))
-      return res
-        .status(400)
-        .json({ status: "error", error: "products must be an array" });
-    const cart = await CartManager.replaceAll(req.params.cid, products);
-    if (!cart)
-      return res.status(404).json({ status: "error", error: "Cart not found" });
+    const quantity = parseInt(req.body.quantity || 1);
+    const cart = await cm.addProduct(req.params.cid, req.params.pid, quantity);
+    res.status(201).json({ status: "success", payload: cart });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE api/carts/:cid/products/:pid
+router.delete("/:cid/products/:pid", async (req, res, next) => {
+  try {
+    const cart = await cm.removeProduct(req.params.cid, req.params.pid);
     res.json({ status: "success", payload: cart });
-  } catch (e) {
-    res.status(400).json({ status: "error", error: e.message || "Invalid id" });
+  } catch (err) {
+    next(err);
   }
 });
-router.put("/:cid/products/:pid", async (req, res) => {
+
+// PUT api/carts/:cid  (reemplaza arreglo de productos)
+router.put("/:cid", async (req, res, next) => {
   try {
-    const qty = req.body.quantity;
-    const cart = await CartManager.setQuantity(
+    const productsArray = req.body.products;
+    const cart = await cm.replaceProducts(req.params.cid, productsArray);
+    res.json({ status: "success", payload: cart });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT api/carts/:cid/products/:pid  (solo cantidad)
+router.put("/:cid/products/:pid", async (req, res, next) => {
+  try {
+    const quantity = parseInt(req.body.quantity);
+    const cart = await cm.updateProductQuantity(
       req.params.cid,
       req.params.pid,
-      qty
+      quantity
     );
-    if (!cart)
-      return res.status(404).json({ status: "error", error: "Cart not found" });
     res.json({ status: "success", payload: cart });
-  } catch {
-    res.status(400).json({ status: "error", error: "Invalid id" });
+  } catch (err) {
+    next(err);
   }
 });
-router.delete("/:cid/products/:pid", async (req, res) => {
+
+// DELETE api/carts/:cid  (vaciar)
+router.delete("/:cid", async (req, res, next) => {
   try {
-    const cart = await CartManager.removeProduct(
-      req.params.cid,
-      req.params.pid
-    );
-    if (!cart)
-      return res.status(404).json({ status: "error", error: "Cart not found" });
-    res.json({ status: "success" });
-  } catch {
-    res.status(400).json({ status: "error", error: "Invalid id" });
+    const cart = await cm.emptyCart(req.params.cid);
+    res.json({ status: "success", payload: cart });
+  } catch (err) {
+    next(err);
   }
 });
-router.delete("/:cid", async (req, res) => {
-  try {
-    const cart = await CartManager.clear(req.params.cid);
-    if (!cart)
-      return res.status(404).json({ status: "error", error: "Cart not found" });
-    res.json({ status: "success" });
-  } catch {
-    res.status(400).json({ status: "error", error: "Invalid id" });
-  }
-});
-module.exports = router;
+
+export default router;

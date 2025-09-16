@@ -1,0 +1,23 @@
+<section>
+  <h2>Agregar Productos (Socket.io)</h2>
+
+  <form id="create-form">
+    <input name="title" placeholder="Título" required />
+    <input name="description" placeholder="Descripción" required />
+    <input name="code" placeholder="Código único" required />
+    <input name="price" type="number" min="0" placeholder="Precio" required />
+    <input name="stock" type="number" min="0" placeholder="Stock" required />
+    <input name="category" placeholder="Categoría" required />
+    <label><input type="checkbox" name="status" checked /> Disponible</label>
+    <button type="submit">Crear</button>
+  </form>
+
+  <form id="delete-form" class="mt">
+    <input name="id" placeholder="ID a eliminar" required />
+    <button type="submit">Eliminar</button>
+  </form>
+
+  <ul id="product-list" class="list"></ul>
+</section>
+
+<script src="/public/js/realtime.js"></script>

@@ -1,26 +1,28 @@
-<h1 class="h4 mb-3">Carrito</h1>
-
-{{#if cart.products.length}}
-<ul class="list-group mb-3">
-  {{#each cart.products}}
-  <li class="list-group-item d-flex justify-content-between align-items-center">
-    <div>
-      <strong>{{this.product.title}}</strong>
-      <div class="small text-muted">Precio: ${{this.product.price}} &middot; Cantidad: {{this.quantity}}</div>
+<section>
+  <h2>Carrito {{cart._id}}</h2>
+  {{#if cart.products.length}}
+    <ul class="list">
+      {{#each cart.products}}
+        <li class="list-item">
+          <div>
+            <strong>{{this.product.title}}</strong> — ${{this.product.price}} × {{this.quantity}}
+            <div class="muted">Cat: {{this.product.category}} | {{#if this.product.status}}Disponible{{else}}No disponible{{/if}}</div>
+          </div>
+          <div class="row">
+            <form class="inline-form" onsubmit="return updateQty(event, '{{../cart._id}}','{{this.product._id}}');">
+              <input type="number" min="1" name="quantity" value="{{this.quantity}}"/>
+              <button type="submit">Actualizar</button>
+            </form>
+            <button class="btn danger" onclick="removeFromCart('{{../cart._id}}','{{this.product._id}}')">Eliminar</button>
+          </div>
+        </li>
+      {{/each}}
+    </ul>
+    <div class="row mt">
+      <button class="btn danger" onclick="emptyCart('{{cart._id}}')">Vaciar carrito</button>
     </div>
-    <button type="button" class="btn btn-sm btn-danger"
-      onclick="removeFromCart('{{../cart._id}}','{{this.product._id}}')">Eliminar</button>
-  </li>
-  {{/each}}
-</ul>
-
-<div class="d-flex gap-2">
-  <button type="button" class="btn btn-warning" onclick="clearCart('{{cart._id}}')">Vaciar carrito</button>
-  <a href="/products" class="btn btn-secondary">Seguir comprando</a>
-</div>
-{{else}}
-<div class="alert alert-info">Tu carrito está vacío.</div>
-<a href="/products" class="btn btn-primary">Ir a productos</a>
-{{/if}}
-
-<script src="/js/cart.js"></script>
+  {{else}}
+    <p>El carrito está vacío.</p>
+  {{/if}}
+</section>
+<script src="/public/js/cart.js"></script>

@@ -1,22 +1,37 @@
 const socket = io();
-socket.on("productos", (productos) => {
-  const ul = document.getElementById("lista-productos");
+
+const ul = document.getElementById("product-list");
+const createForm = document.getElementById("create-form");
+const deleteForm = document.getElementById("delete-form");
+
+socket.on("products", (items) => {
   ul.innerHTML = "";
-  productos.forEach((p) => {
+  items.forEach((p) => {
     const li = document.createElement("li");
-    li.setAttribute("data-id", p._id);
-    li.innerHTML = `${p.title} — $${p.price} <button onclick="eliminarProducto('${p._id}')">Eliminar</button>`;
+    li.className = "list-item";
+    li.innerHTML = `<div><strong>${p.title}</strong> — $${p.price} | Stock: ${
+      p.stock
+    } <div class="muted">${p.category} | ${
+      p.status ? "Disponible" : "No disp."
+    }</div></div><small>${p._id}</small>`;
     ul.appendChild(li);
   });
 });
-document.getElementById("form-producto").addEventListener("submit", (e) => {
+
+createForm.addEventListener("submit", (e) => {
   e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target).entries());
+  const formData = new FormData(createForm);
+  const data = Object.fromEntries(formData.entries());
   data.price = Number(data.price);
   data.stock = Number(data.stock);
-  socket.emit("nuevoProducto", data);
-  e.target.reset();
+  data.status = formData.get("status") === "on";
+  socket.emit("addProduct", data);
+  createForm.reset();
 });
-function eliminarProducto(id) {
-  socket.emit("eliminarProducto", id);
-}
+
+deleteForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = new FormData(deleteForm).get("id");
+  socket.emit("deleteProduct", id);
+  deleteForm.reset();
+});

@@ -1,32 +1,32 @@
-async function ensureCart() {
-  let cid = localStorage.getItem("cid");
-  if (!cid) {
-    const r = await fetch("/api/carts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-    const d = await r.json();
-    if (d?.payload?._id) {
-      cid = d.payload._id;
-      localStorage.setItem("cid", cid);
-    }
-  }
-  return cid;
+async function removeFromCart(cid, pid) {
+  if (!confirm("¿Eliminar producto del carrito?")) return;
+  const res = await fetch(`/api/carts/${cid}/products/${pid}`, {
+    method: "DELETE",
+  });
+  const data = await res.json();
+  if (res.ok && data.status === "success") location.reload();
+  else alert(data.error || "Error eliminando.");
 }
-async function addToCart(pid) {
-  const cid = await ensureCart();
-  await fetch(`/api/carts/${cid}/products/${pid}`, {
+
+async function emptyCart(cid) {
+  if (!confirm("¿Vaciar carrito?")) return;
+  const res = await fetch(`/api/carts/${cid}`, { method: "DELETE" });
+  const data = await res.json();
+  if (res.ok && data.status === "success") location.reload();
+  else alert(data.error || "Error vaciando.");
+}
+
+async function updateQty(ev, cid, pid) {
+  ev.preventDefault();
+  const form = ev.target;
+  const quantity = parseInt(form.quantity.value);
+  const res = await fetch(`/api/carts/${cid}/products/${pid}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ quantity: 1 }),
+    body: JSON.stringify({ quantity }),
   });
-  alert("Agregado!");
-}
-async function removeFromCart(cid, pid) {
-  await fetch(`/api/carts/${cid}/products/${pid}`, { method: "DELETE" });
-  location.reload();
-}
-async function clearCart(cid) {
-  await fetch(`/api/carts/${cid}`, { method: "DELETE" });
-  location.reload();
+  const data = await res.json();
+  if (res.ok && data.status === "success") location.reload();
+  else alert(data.error || "Error actualizando.");
+  return false;
 }
