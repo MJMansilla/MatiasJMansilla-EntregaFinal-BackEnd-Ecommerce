@@ -1,20 +1,51 @@
-<h1>Productos</h1>
+<header class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">Productos</h1>
+  <a href="/realtimeProducts" class="btn btn-outline-info btn-sm">Agregar
+    Productos</a>
+</header>
 
-<ul>
+<div class="row g-3">
   {{#each products}}
-    <li>
-      <a href="/products/{{this._id}}">{{this.title}}</a>
-      - ${{this.price}} - {{this.category}} - {{#if this.status}}Disponible{{else}}No disponible{{/if}}
-      <!-- Opción B: botón directo -->
-      <button onclick="addToCart('{{this._id}}')">Agregar al carrito</button>
-    </li>
+    <div class="col-12 col-sm-6 col-md-4">
+      <div class="card h-100 shadow-sm product-card">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{this.title}}</h5>
+          <p class="card-text text-muted mb-1"><small>Categoría:
+              {{this.category}}</small></p>
+          <p class="card-text fs-5 fw-semibold mb-3">${{this.price}}</p>
+          <div class="mt-auto d-flex gap-2">
+            <a href="/products/{{this._id}}" class="btn btn-sm btn-primary">Ver
+              detalles</a>
+            <button
+              type="button"
+              onclick="addToCart('{{this._id}}')"
+              class="btn btn-sm btn-success"
+            >Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   {{/each}}
-</ul>
-
-<div>
-  {{#if hasPrevPage}} <a href="{{prevLink}}">Prev</a> {{/if}}
-  <span>Página {{page}} de {{totalPages}}</span>
-  {{#if hasNextPage}} <a href="{{nextLink}}">Next</a> {{/if}}
 </div>
+
+<nav aria-label="Page navigation" class="mt-4">
+  <ul class="pagination justify-content-center">
+    {{#if hasPrevPage}}
+      <li class="page-item">
+        <a class="page-link" href="{{prevLink}}">Anterior</a>
+      </li>
+    {{/if}}
+
+    <li class="page-item disabled">
+      <span class="page-link">Página {{page}} de {{totalPages}}</span>
+    </li>
+
+    {{#if hasNextPage}}
+      <li class="page-item">
+        <a class="page-link" href="{{nextLink}}">Siguiente</a>
+      </li>
+    {{/if}}
+  </ul>
+</nav>
 
 <script src="/js/cart.js"></script>

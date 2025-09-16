@@ -1,0 +1,10 @@
+.product-card {
+  border-radius: 12px;
+}
+.product-card .card-body {
+  min-height: 180px;
+}
+
+#liveToast.text-bg-danger .toast-body {
+  color: #fff;
+}

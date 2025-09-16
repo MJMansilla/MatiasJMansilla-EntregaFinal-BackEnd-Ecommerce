@@ -1,13 +1,11 @@
-const mongoose = require('mongoose');
-
+const mongoose = require("mongoose");
 async function connectDB(uri) {
   try {
-    await mongoose.connect(uri, { dbName: 'ecommerce' });
-    console.log('[Mongo] Connected');
+    await mongoose.connect(uri, { dbName: "ecommerce" });
+    console.log("[Mongo] Conectado");
   } catch (err) {
-    console.error('[Mongo] Error:', err.message);
-    process.exit(1); // evita que el server quede “vivo” si falla la DB
+    console.error("[Mongo] Error de conexión:", err.message);
+    process.exit(1);
   }
 }
-
 module.exports = { connectDB };

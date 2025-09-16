@@ -1,12 +1,36 @@
-<h1>{{product.title}}</h1>
-<p>{{product.description}}</p>
-<p>Categoría: {{product.category}}</p>
-<p>Precio: ${{product.price}}</p>
-<p>Stock: {{product.stock}}</p>
-<p>Estado: {{#if product.status}}Disponible{{else}}No disponible{{/if}}</p>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h4">{{product.title}}</h1>
+    <p class="mb-2">{{product.description}}</p>
 
-<button onclick="addToCart('{{product._id}}')">Agregar al carrito</button>
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="small text-muted">Precio</div>
+        <div class="fs-5 fw-semibold">${{product.price}}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small text-muted">Categoría</div>
+        <div>{{product.category}}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small text-muted">Stock</div>
+        <div>{{product.stock}}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small text-muted">Estado</div>
+        <div>{{#if product.status}}Disponible{{else}}No disponible{{/if}}</div>
+      </div>
+    </div>
 
-<p><a href="/products">Volver</a></p>
+    <div class="mt-3 d-flex gap-2">
+      <button
+        type="button"
+        onclick="addToCart('{{product._id}}')"
+        class="btn btn-success"
+      >Agregar al carrito</button>
+      <a href="/products" class="btn btn-secondary">Volver</a>
+    </div>
+  </div>
+</div>
 
 <script src="/js/cart.js"></script>

@@ -1,16 +1,26 @@
-<h1>Carrito {{cart._id}}</h1>
+<h1 class="h4 mb-3">Carrito</h1>
 
-<ul>
+{{#if cart.products.length}}
+<ul class="list-group mb-3">
   {{#each cart.products}}
-    <li>
-      {{this.product.title}} - ${{this.product.price}} x {{this.quantity}}
-      <button onclick="removeFromCart('{{../cart._id}}','{{this.product._id}}')">Eliminar</button>
-    </li>
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      <strong>{{this.product.title}}</strong>
+      <div class="small text-muted">Precio: ${{this.product.price}} &middot; Cantidad: {{this.quantity}}</div>
+    </div>
+    <button type="button" class="btn btn-sm btn-danger"
+      onclick="removeFromCart('{{../cart._id}}','{{this.product._id}}')">Eliminar</button>
+  </li>
   {{/each}}
 </ul>
 
-<button onclick="clearCart('{{cart._id}}')">Vaciar carrito</button>
-
-<p><a href="/products">Seguir comprando</a></p>
+<div class="d-flex gap-2">
+  <button type="button" class="btn btn-warning" onclick="clearCart('{{cart._id}}')">Vaciar carrito</button>
+  <a href="/products" class="btn btn-secondary">Seguir comprando</a>
+</div>
+{{else}}
+<div class="alert alert-info">Tu carrito está vacío.</div>
+<a href="/products" class="btn btn-primary">Ir a productos</a>
+{{/if}}
 
 <script src="/js/cart.js"></script>
